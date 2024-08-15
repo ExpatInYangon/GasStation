@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Gas Station Feedback Map</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+        }
+
+        #map {
+            height: 100vh;
+            width: 100%;
+        }
+
+        #statusBox {
+            padding: 10px;
+            background: white;
+            border-top: 1px solid #ccc;
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            max-height: 40%;
+            overflow-y: auto;
+            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+        }
+
+        #feedbackList {
+            max-height: 150px;
+            overflow-y: auto;
+            margin-bottom: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .feedback-item {
+            padding: 5px 0;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+        }
+
+        .feedback-input {
+            display: flex;
+            gap: 10px;
+        }
+
+        .feedback-input input {
+            flex: 1;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        .feedback-input button {
+            padding: 8px 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            background-color: #007bff;
+            color: white;
+        }
+
+        .feedback-input button.negative {
+            background-color: #dc3545;
+        }
+
+        @media (max-width: 600px) {
+            .feedback-item {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .feedback-input {
+                flex-direction: column;
+                gap: 5px;
+            }
+
+            .feedback-input input,
+            .feedback-input button {
+                width: 100%;
+                box-sizing: border-box;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div id="map"></div>
+<div id="statusBox" style="display:none;">
+    <div id="feedbackList"></div>
+    <div class="feedback-input">
+        <input type="text" id="feedbackText" placeholder="Leave feedback">
+        <button onclick="submitFeedback('positive')" class="positive">Positive</button>
+        <button onclick="submitFeedback('negative')" class="negative">Negative</button>
+    </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+<script>
+    var map = L.map('map').setView([51.505, -0.09], 13);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+
+    var gasStations = [
+        {id: 1, name: "Station 1", lat: 51.505, lon: -0.09, feedbacks: [], status: "black"},
+        {id: 2, name: "Station 2", lat: 51.515, lon: -0.10, feedbacks: [], status: "black"},
+        {id: 3, name: "Station 3", lat: 51.525, lon: -0.11, feedbacks: [], status: "black"},
+    ];
+
+    var markers = {};
+
+    gasStations.forEach(function (station) {
+        var marker = L.circleMarker([station.lat, station.lon], {
+            color: station.status,
+            radius: 10
+        }).addTo(map);
+
+        marker.on('click', function () {
+            showStatusBox(station);
+        });
+
+        markers[station.id] = marker;
+    });
+
+    function showStatusBox(station) {
+        var feedbackList = document.getElementById('feedbackList');
+        feedbackList.innerHTML = '';
+
+        station.feedbacks.slice().reverse().forEach(function (feedback) {
+            var div = document.createElement('div');
+            div.className = 'feedback-item';
+            var timestamp = new Date(feedback.timestamp);
+            div.innerHTML = `<span>${feedback.text} (${feedback.type})</span> <span>${timestamp.toLocaleString()}</span>`;
+            feedbackList.appendChild(div);
+        });
+
+        document.getElementById('statusBox').style.display = 'block';
+
+        // Set the current station to be accessed for submitting feedback
+        currentStation = station;
+    }
+
+    var currentStation = null;
+
+    function submitFeedback(type) {
+        if (!currentStation) return;
+
+        var feedbackText = document.getElementById('feedbackText').value;
+        if (feedbackText.trim() === '') return;
+
+        // Add feedback to the current station
+        currentStation.feedbacks.push({
+            text: feedbackText,
+            type: type,
+            timestamp: new Date().toISOString()
+        });
+
+        // Keep only the last 10 feedbacks
+        if (currentStation.feedbacks.length > 10) {
+            currentStation.feedbacks.shift();
+        }
+
+        // Update marker color based on the latest feedback
+        if (type === 'positive') {
+            currentStation.status = 'green';
+        } else if (type === 'negative') {
+            currentStation.status = 'red';
+        }
+        markers[currentStation.id].setStyle({color: currentStation.status});
+
+        // Update the status box with the latest feedbacks
+        showStatusBox(currentStation);
+
+        // Clear input field
+        document.getElementById('feedbackText').value = '';
+    }
+</script>
+
+</body>
+</html>
