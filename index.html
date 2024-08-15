@@ -92,99 +92,21 @@
     </style>
 </head>
 <body>
-
-<div id="map"></div>
-<div id="statusBox" style="display:none;">
-    <div id="feedbackList"></div>
-    <div class="feedback-input">
-        <input type="text" id="feedbackText" placeholder="Leave feedback">
-        <button onclick="submitFeedback('positive')" class="positive">Positive</button>
-        <button onclick="submitFeedback('negative')" class="negative">Negative</button>
+    <div id="map"></div>
+    <div id="statusBox" style="display:none;">
+        <div id="feedbackList"></div>
+        <div class="feedback-input">
+            <input type="text" id="feedbackText" placeholder="Leave feedback">
+            <button onclick="submitFeedback('positive')" class="positive">Positive</button>
+            <button onclick="submitFeedback('negative')" class="negative">Negative</button>
+        </div>
     </div>
-</div>
-
-<script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
-<script>
-    var map = L.map('map').setView([51.505, -0.09], 13);
-
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap contributors'
-    }).addTo(map);
-
-    var gasStations = [
-        {id: 1, name: "Station 1", lat: 51.505, lon: -0.09, feedbacks: [], status: "black"},
-        {id: 2, name: "Station 2", lat: 51.515, lon: -0.10, feedbacks: [], status: "black"},
-        {id: 3, name: "Station 3", lat: 51.525, lon: -0.11, feedbacks: [], status: "black"},
-    ];
-
-    var markers = {};
-
-    gasStations.forEach(function (station) {
-        var marker = L.circleMarker([station.lat, station.lon], {
-            color: station.status,
-            radius: 10
-        }).addTo(map);
-
-        marker.on('click', function () {
-            showStatusBox(station);
-        });
-
-        markers[station.id] = marker;
-    });
-
-    function showStatusBox(station) {
-        var feedbackList = document.getElementById('feedbackList');
-        feedbackList.innerHTML = '';
-
-        station.feedbacks.slice().reverse().forEach(function (feedback) {
-            var div = document.createElement('div');
-            div.className = 'feedback-item';
-            var timestamp = new Date(feedback.timestamp);
-            div.innerHTML = `<span>${feedback.text} (${feedback.type})</span> <span>${timestamp.toLocaleString()}</span>`;
-            feedbackList.appendChild(div);
-        });
-
-        document.getElementById('statusBox').style.display = 'block';
-
-        // Set the current station to be accessed for submitting feedback
-        currentStation = station;
-    }
-
-    var currentStation = null;
-
-    function submitFeedback(type) {
-        if (!currentStation) return;
-
-        var feedbackText = document.getElementById('feedbackText').value;
-        if (feedbackText.trim() === '') return;
-
-        // Add feedback to the current station
-        currentStation.feedbacks.push({
-            text: feedbackText,
-            type: type,
-            timestamp: new Date().toISOString()
-        });
-
-        // Keep only the last 10 feedbacks
-        if (currentStation.feedbacks.length > 10) {
-            currentStation.feedbacks.shift();
-        }
-
-        // Update marker color based on the latest feedback
-        if (type === 'positive') {
-            currentStation.status = 'green';
-        } else if (type === 'negative') {
-            currentStation.status = 'red';
-        }
-        markers[currentStation.id].setStyle({color: currentStation.status});
-
-        // Update the status box with the latest feedbacks
-        showStatusBox(currentStation);
-
-        // Clear input field
-        document.getElementById('feedbackText').value = '';
-    }
-</script>
+    
+    <!-- Add a Locate Me button -->
+    <button id="locateMeBtn" style="position: absolute; top: 10px; right: 10px; z-index: 1000; padding: 10px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer;">Locate Me</button>
+    
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script src="script.js"></script>
 
 </body>
 </html>
